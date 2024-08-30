@@ -2,9 +2,9 @@ import sys
 import os
 import pandas as pd
 from PyQt5.QtWidgets import (QApplication, QWidget, QPushButton, QVBoxLayout, QHBoxLayout,
-                             QMessageBox, QLabel, QFrame)
+                             QMessageBox, QLabel, QDesktopWidget, QTextEdit)
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QFont
+from PyQt5.QtGui import QFont, QColor
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
 from reportlab.pdfgen import canvas
@@ -13,7 +13,6 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.platypus import Paragraph
 from reportlab.lib.enums import TA_RIGHT
-from reportlab.lib.colors import HexColor
 import subprocess
 
 # 한글 폰트 등록
@@ -50,8 +49,8 @@ def create_labels(output_filename, data):
         x = margin_left + col * (label_width + gap_horizontal)
         y = page_height - margin_top - (row_on_page + 1) * label_height
 
-        # 라벨 외곽선 색상 변경
-        c.setStrokeColor(HexColor("#b1b3b1"))
+        # 라벨 외곽선 컬러 변경
+        c.setStrokeColorRGB(177/255, 179/255, 177/255)  # #b1b3b1
         c.rect(x, y, label_width, label_height)
 
         text_x = x + 2 * mm
@@ -83,67 +82,76 @@ class LabelPrinterApp(QWidget):
 
     def initUI(self):
         self.setWindowTitle('남경기노회 주소라벨 프로그램')
-        self.setFixedSize(530, 500)  # 전체 크기 설정
+        self.setFixedSize(530, 500)
 
         layout = QVBoxLayout()
-        layout.setSpacing(5)  # Section 간 마진 설정
 
         # Title Section
         title_label = QLabel('남경기노회 주소라벨 프로그램', self)
         title_label.setAlignment(Qt.AlignCenter)
-        title_label.setFont(QFont('NanumGothic', 15))
-        title_label.setFixedSize(500, 30)
+        title_label.setFont(QFont('NanumGothic', 15, QFont.Bold))
+        title_label.setFixedHeight(30)
         layout.addWidget(title_label)
 
         # About Section
-        about_frame = QFrame(self)
-        about_frame.setStyleSheet(
-            "QFrame { border: 1px solid #b1b3b1; border-radius: 10px; }")
-        about_frame.setFixedSize(500, 300)
-        about_layout = QVBoxLayout(about_frame)
+        about_label = QLabel('사용방법을 숙지해 주세요!', self)
+        about_label.setAlignment(Qt.AlignCenter)
+        about_label.setStyleSheet(
+            "background-color: #f7dcad; border-radius: 10px; font-weight: bold;")
+        about_label.setFixedHeight(35)
+        layout.addWidget(about_label)
 
-        # about_title = QLabel('사용방법', about_frame)
-        # about_title.setFont(QFont('NanumGothic', 12, QFont.Bold))
-        # about_layout.addWidget(about_title)
-
-        about_content = QLabel("이 프로그램은 남경기노회원을 위한 주소록 라벨 인쇄 프로그램입니다. "
-                               "사용방법은 1) \"라벨생성\" 버튼을 먼저 클릭하시고, (생성시간 약 3~4초) "
-                               "2) 인쇄 버튼을 클릭하시면 사용자별 인쇄 옵션 창이 실행 된 후 반드시 '단면인쇄'를 "
-                               "선택하신 후 인쇄 실행을 하시면 약 3~4페이지의 라벨이 출력됩니다.", about_frame)
-        about_content.setWordWrap(True)
-        about_layout.addWidget(about_content)
-
-        layout.addWidget(about_frame)
+        about_content = QTextEdit(self)
+        about_content.setHtml("""
+        <h3>사용방법</h3>
+        <ol>
+            <li><strong>"라벨규격"</strong>: <strong>A4용지 14칸짜리</strong> 라벨입니다.<br>(라벨한장규격:가로:99.1mm, 세로: 38.1mm)</li>
+            <li><strong>"라벨생성" 버튼</strong>을 먼저 클릭한 후 확인창을 종료하세요.</li>
+            <li><strong>"인쇄하기" 버튼</strong>을 클릭하시면 PDF 인쇄 옵션 창이 실행된 후 
+               반드시 <strong>단면인쇄</strong>를 선택하신 후 인쇄 실행하시면 됩니다.</li>
+            <li>PDF 프로그램이 컴퓨터에 설치되어 있지 않다면 
+               <strong>"알PDF v4.0"</strong>를 "https://altools.co.kr/product/ALPDF"에서 다운로드 후 
+               설치하신 후 <strong>"라벨생성"</strong>과 <strong>"인쇄하기"</strong>를 실행하세요.</li>
+        </ol>
+        """)
+        about_content.setReadOnly(True)
+        about_content.setFixedHeight(290)
+        layout.addWidget(about_content)
 
         # Button Section
         button_layout = QHBoxLayout()
 
         self.generate_btn = QPushButton('라벨 생성', self)
         self.generate_btn.clicked.connect(self.generate_labels)
-        self.generate_btn.setStyleSheet("background-color: #FFB3BA;")
+        self.generate_btn.setStyleSheet(
+            "background-color: #FFB3BA; font-weight: bold;")
         button_layout.addWidget(self.generate_btn)
 
-        self.print_btn = QPushButton('인쇄', self)
+        self.print_btn = QPushButton('인쇄하기', self)
         self.print_btn.clicked.connect(self.print_labels)
-        self.print_btn.setStyleSheet("background-color: #BAFFC9;")
+        self.print_btn.setStyleSheet(
+            "background-color: #BAFFC9; font-weight: bold;")
         button_layout.addWidget(self.print_btn)
 
         button_widget = QWidget()
         button_widget.setLayout(button_layout)
-        button_widget.setFixedSize(500, 80)
+        button_widget.setFixedHeight(80)
         layout.addWidget(button_widget)
 
         # Quote Section
         quote_label = QLabel('made by 나종춘(2024)', self)
         quote_label.setAlignment(Qt.AlignRight | Qt.AlignBottom)
-        quote_label.setFixedSize(500, 20)
+        quote_label.setFixedHeight(20)
         layout.addWidget(quote_label)
 
         self.setLayout(layout)
 
-        # 화면 중앙에 위치
+        # 창을 화면 중앙에 위치
+        self.center()
+
+    def center(self):
         qr = self.frameGeometry()
-        cp = QApplication.desktop().availableGeometry().center()
+        cp = QDesktopWidget().availableGeometry().center()
         qr.moveCenter(cp)
         self.move(qr.topLeft())
 
